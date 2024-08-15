@@ -19,4 +19,40 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
+    app.run(debug=True)from flask import Flask, render_template, request, redirect, url_for
+import mysql.connector
+
+app = Flask(__name__)
+
+# Configuración de la conexión a la base de datos
+db_config = {
+    'host': 'localhost',
+    'user': 'tu_usuario',  # Cambia esto por tu usuario de MySQL
+    'password': 'tu_contraseña',  # Cambia esto por tu contraseña de MySQL
+    'database': 'formulario_db'
+}
+
+def connect_db():
+    conn = mysql.connector.connect(**db_config)
+    return conn
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/submit', methods=['POST'])
+def submit():
+    nombre = request.form['name']
+    correo = request.form['email']
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO contactos (nombre, correo) VALUES (%s, %s)", (nombre, correo))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
     app.run(debug=True)
