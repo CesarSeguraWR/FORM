@@ -64,10 +64,20 @@ def protegido():
 def usuarios():
     return render_template('usuarios.html')
 
-@app.route('/registro')
+@app.route('/registro', methods=['GET', 'POST'])
 def registro():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        password = request.form['password']
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO usuarios (nombre, password) VALUES (%s, %s)", (nombre, password))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Registro exitoso! Puedes iniciar sesión ahora.')
+        return redirect(url_for('login'))
     return render_template('registro.html')
-
 @app.route('/contactenos')
 def contactenos():
     return render_template('contactenos.html')
