@@ -1,0 +1,10 @@
+CREATE DATABASE formulario;
+USE formulario;
+CREATE TABLE contactos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    password VARCHAR(100) NOT NULL
+);
+CREATE USER 'rooty'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON sena.* TO 'rooty'@'localhost';
+FLUSH PRIVILEGES;
