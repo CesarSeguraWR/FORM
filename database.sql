@@ -6,5 +6,5 @@ CREATE TABLE contactos (
     password VARCHAR(100) NOT NULL
 );
 CREATE USER 'rooty'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON sena.* TO 'rooty'@'localhost';
+GRANT ALL PRIVILEGES ON formulario.* TO 'rooty'@'localhost' IDENTIFIED BY 'password';
 FLUSH PRIVILEGES;

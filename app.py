@@ -1,25 +1,21 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import mysql.connector
+from flask_mysqldb import MySQL
+from flask_session import Session
 
 app = Flask(__name__)
-app.secret_key = 'bamby'  # Clave secreta para sesiones
 
 # Configuración de la base de datos
-db_config = {
-    'host': 'localhost',
-    'user': 'rooty',
-    'password': 'password',
-    'database': 'formulario'
-}
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'rooty'
+app.config['MYSQL_PASSWORD'] = 'password'
+app.config['MYSQL_DB'] = 'formulario'
 
-# Función para conectar a la base de datos
-def connect_db():
-    try:
-        conn = mysql.connector.connect(**db_config)
-        return conn
-    except mysql.connector.Error as err:
-        print(f"Error al conectar con la base de datos: {err}")
-        return None
+mysql = MySQL(app)
+
+# Configuración de la sesión
+app.secret_key = 'mysecretkey'
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 # Ruta de inicio
 @app.route('/')
@@ -32,21 +28,14 @@ def submit():
     nombre = request.form['name']
     correo = request.form['email']
 
-    conn = connect_db()
-    if conn is None:
-        flash('Error al conectar con la base de datos', 'error')
-        return redirect(url_for('index'))
-    
     try:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO contactos (nombre, correo) VALUES (%s, %s)", (nombre, correo))
-        conn.commit()
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO contactos (nombre, correo) VALUES (%s, %s)", (nombre, correo))
+        mysql.connection.commit()
+        cur.close()
         flash('¡Formulario enviado con éxito!', 'success')
-    except mysql.connector.Error as err:
-        flash(f"Error al guardar en la base de datos: {err}", 'error')
-    finally:
-        cursor.close()
-        conn.close()
+    except Exception as e:
+        flash(f"Error al guardar en la base de datos: {e}", 'error')
     
     return redirect(url_for('index'))
 
@@ -62,25 +51,18 @@ def login():
         nombre = request.form['nombre']
         password = request.form['password']
         
-        conn = connect_db()
-        if conn is None:
-            flash('Error al conectar con la base de datos', 'error')
-            return redirect(url_for('login'))
-
         try:
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM usuarios WHERE nombre=%s AND password=%s", (nombre, password))
-            user = cursor.fetchone()
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT * FROM usuarios WHERE nombre=%s AND password=%s", (nombre, password))
+            user = cur.fetchone()
+            cur.close()
             if user:
-                session['user'] = user['nombre']
+                session['user'] = user[0]  # Asumiendo que el nombre está en la primera columna
                 return redirect(url_for('protegido'))
             else:
                 flash('Nombre o contraseña incorrectos', 'error')
-        except mysql.connector.Error as err:
-            flash(f"Error en la consulta a la base de datos: {err}", 'error')
-        finally:
-            cursor.close()
-            conn.close()
+        except Exception as e:
+            flash(f"Error en la consulta a la base de datos: {e}", 'error')
     
     return render_template('login.html')
 
@@ -95,7 +77,11 @@ def protegido():
 # Ruta para mostrar los usuarios (puedes personalizar esta página)
 @app.route('/usuarios')
 def usuarios():
-    return render_template('usuarios.html')
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT nombre, password FROM usuarios")
+    data = cur.fetchall()
+    cur.close()
+    return render_template('usuarios.html', usuarios=data)
 
 # Ruta para el registro de nuevos usuarios
 @app.route('/registro', methods=['GET', 'POST'])
@@ -104,21 +90,14 @@ def registro():
         nombre = request.form['nombre']
         password = request.form['password']
 
-        conn = connect_db()
-        if conn is None:
-            flash('Error al conectar con la base de datos', 'error')
-            return redirect(url_for('registro'))
-
         try:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO usuarios (nombre, password) VALUES (%s, %s)", (nombre, password))
-            conn.commit()
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO usuarios (nombre, password) VALUES (%s, %s)", (nombre, password))
+            mysql.connection.commit()
+            cur.close()
             flash('¡Registro exitoso! Puedes iniciar sesión ahora.', 'success')
-        except mysql.connector.Error as err:
-            flash(f"Error al registrar el usuario: {err}", 'error')
-        finally:
-            cursor.close()
-            conn.close()
+        except Exception as e:
+            flash(f"Error al registrar el usuario: {e}", 'error')
         
         return redirect(url_for('login'))
     

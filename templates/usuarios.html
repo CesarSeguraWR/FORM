@@ -4,5 +4,21 @@
 
 {% block content %}
 <h1>Usuarios</h1>
-<p>Esta es la página de usuarios.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nombre de Usuario</th>
+            <th>Contraseña</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario[0] }}</td>  <!-- Nombre de usuario -->
+            <td>{{ usuario[1] }}</td>  <!-- Contraseña -->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
