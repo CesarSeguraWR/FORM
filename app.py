@@ -113,7 +113,9 @@ def registro():
 @app.route('/contactenos')
 def contactenos():
     return render_template('contactenos.html')
-
+@app.route('/registro_a')
+def registro_a():
+    return render_template('registro_a.html')
 # Ejecuta la aplicación
 if __name__ == '__main__':
     app.run(debug=True)
