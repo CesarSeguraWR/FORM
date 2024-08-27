@@ -57,7 +57,8 @@ def login():
             user = cur.fetchone()
             cur.close()
             if user:
-                session['user'] = user[0]  # Asumiendo que el nombre está en la primera columna
+                session['admin'] = user[0]  # Asumiendo que el nombre está en la primera columna
+                session['user'] = user[1]   # Asumiendo que el rol está en la cuarta columna
                 return redirect(url_for('protegido'))
             else:
                 flash('Nombre o contraseña incorrectos', 'error')
@@ -74,9 +75,13 @@ def protegido():
     else:
         return redirect(url_for('login'))
 
-# Ruta para mostrar los usuarios (puedes personalizar esta página)
+# Ruta para mostrar los usuarios (accesible solo para administradores)
 @app.route('/usuarios')
 def usuarios():
+    if 'user' not in session or session.get('rol') != '1':  # '1' es el valor para el rol de Administrador
+        flash('Acceso denegado: Necesitas ser Administrador para acceder a esta página.', 'error')
+        return redirect(url_for('login'))
+    
     cur = mysql.connection.cursor()
     cur.execute("SELECT nombre, password FROM usuarios")
     data = cur.fetchall()
@@ -89,10 +94,11 @@ def registro():
     if request.method == 'POST':
         nombre = request.form['nombre']
         password = request.form['password']
+        rol = request.form['rol']  # Captura el rol seleccionado en el formulario
 
         try:
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO usuarios (nombre, password) VALUES (%s, %s)", (nombre, password))
+            cur.execute("INSERT INTO usuarios (nombre, password, rol) VALUES (%s, %s, %s)", (nombre, password, rol))
             mysql.connection.commit()
             cur.close()
             flash('¡Registro exitoso! Puedes iniciar sesión ahora.', 'success')
