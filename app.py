@@ -59,6 +59,7 @@ def login():
             if user:
                 session['admin'] = user[0]  # Asumiendo que el nombre está en la primera columna
                 session['user'] = user[1]   # Asumiendo que el rol está en la cuarta columna
+                session['rol'] = user[2]    # Assuming that the role is in the third column
                 return redirect(url_for('protegido'))
             else:
                 flash('Nombre o contraseña incorrectos', 'error')
@@ -113,9 +114,33 @@ def registro():
 @app.route('/contactenos')
 def contactenos():
     return render_template('contactenos.html')
-@app.route('/registro_a')
+
+# Ruta para el registro de administradores
+@app.route('/registro_a', methods=['GET', 'POST'])
 def registro_a():
+    # Verificar si el usuario es administrador antes de permitir el acceso
+    if 'rol' not in session or session['rol'] != '1':  # Solo administradores (rol=1)
+        flash('Acceso denegado: Necesitas ser Administrador para acceder a esta página.', 'error')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        password = request.form['password']
+        rol = '1'  # Establecer el rol como '1' para administradores
+
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO usuarios (nombre, password, rol) VALUES (%s, %s, %s)", (nombre, password, rol))
+            mysql.connection.commit()
+            cur.close()
+            flash('¡Administrador registrado exitosamente!', 'success')
+        except Exception as e:
+            flash(f"Error al registrar el administrador: {e}", 'error')
+        
+        return redirect(url_for('registro_a'))
+    
     return render_template('registro_a.html')
+
 # Ejecuta la aplicación
 if __name__ == '__main__':
     app.run(debug=True)
