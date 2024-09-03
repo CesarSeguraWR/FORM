@@ -48,23 +48,19 @@ def nosotros():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        password = request.form['password']
-        
-        try:
-            cur = mysql.connection.cursor()
-            cur.execute("SELECT * FROM usuarios WHERE nombre=%s AND password=%s", (nombre, password))
-            user = cur.fetchone()
-            cur.close()
-            if user:
-                session['admin'] = user[0]  # Asumiendo que el nombre está en la primera columna
-                session['user'] = user[1]   # Asumiendo que el rol está en la cuarta columna
-                session['rol'] = user[2]    # Assuming that the role is in the third column
-                return redirect(url_for('protegido'))
-            else:
-                flash('Nombre o contraseña incorrectos', 'error')
-        except Exception as e:
-            flash(f"Error en la consulta a la base de datos: {e}", 'error')
+        nombre = request.form ['nombre']
+        email = request.form ['email']
+        password = request.form ['password']
+        rol = '1'
+        cursor = mysql.connection.cursor()
+        cursor.execute('SELECT email FROM signup WHERE email = %s', (email,))
+        if cursor.fetchone():
+            flash('⚠️ Este email ya está registrado')
+            return redirect(url_for('signup'))
+        cursor.execute('INSERT INTO signup (name, email, password) VALUES (%s, %s, %s)', (name, email, password))
+
+        mysql.connection.commit()
+        flash('✅ Cuenta creada satisfactoriamente')
     
     return render_template('login.html')
 
@@ -95,8 +91,7 @@ def registro():
     if request.method == 'POST':
         nombre = request.form['nombre']
         password = request.form['password']
-        rol = request.form['rol']  # Captura el rol seleccionado en el formulario
-
+        rol = '1'
         try:
             cur = mysql.connection.cursor()
             cur.execute("INSERT INTO usuarios (nombre, password, rol) VALUES (%s, %s, %s)", (nombre, password, rol))
@@ -118,26 +113,15 @@ def contactenos():
 # Ruta para el registro de administradores
 @app.route('/registro_a', methods=['GET', 'POST'])
 def registro_a():
-    # Verificar si el usuario es administrador antes de permitir el acceso
-    if 'rol' not in session or session['rol'] != '1':  # Solo administradores (rol=1)
-        flash('Acceso denegado: Necesitas ser Administrador para acceder a esta página.', 'error')
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        password = request.form['password']
-        rol = '1'  # Establecer el rol como '1' para administradores
-
-        try:
-            cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO usuarios (nombre, password, rol) VALUES (%s, %s, %s)", (nombre, password, rol))
-            mysql.connection.commit()
-            cur.close()
-            flash('¡Administrador registrado exitosamente!', 'success')
-        except Exception as e:
-            flash(f"Error al registrar el administrador: {e}", 'error')
-        
-        return redirect(url_for('registro_a'))
+        name = request.form ['nombre']
+        password = request.form ['password']
+        rol = request.form ['rol']
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO signup (name, email, password, rol) VALUES (%s, %s, %s, %s)', (name, emai, password, rol))
+        mysql.connection.commit()
+        flash('✅ Cuenta creada satisfactoriamente')
+        return redirect(url_for('login'))
     
     return render_template('registro_a.html')
 

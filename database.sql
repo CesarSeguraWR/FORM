@@ -10,3 +10,4 @@ CREATE TABLE usuarios (
 CREATE USER 'rooty'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON formulario.* TO 'rooty'@'localhost' IDENTIFIED BY 'password';
 FLUSH PRIVILEGES;
+    
